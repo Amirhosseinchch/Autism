@@ -711,7 +711,7 @@ for C,Cname in enumerate(cond):
     print(wavfiles,txtgridfiles,LexicalSurprise)
     
     
-    cell = np.empty((9,len(wavfiles)),dtype=object)
+    cell = np.empty((10,len(wavfiles)),dtype=object)
     
     
     abe  = np.zeros((len(edges)-1),)
@@ -816,6 +816,7 @@ for C,Cname in enumerate(cond):
         
         wordvector=np.zeros((nsamples_wo,1))
         
+        dissimilarityVector = np.zeros((nsamples_wo,1))
         surpriseVector = np.zeros((nsamples_wo,1))
         
         
@@ -824,6 +825,7 @@ for C,Cname in enumerate(cond):
         
         samples = np.round(np.array(rate_new*surprise_onsets)).astype(int)
         surpriseVector[samples,0]=df_surprise['neg_log']
+        dissimilarityVector[samples,0]=df_surprise['SemanticDiss']
     
         for i,c in stim_pho.iterrows():
             
@@ -847,12 +849,13 @@ for C,Cname in enumerate(cond):
                            
         cell[3,tri]=phonemevector ##### cell
         cell[4,tri]=wordvector ##### cell
-        cell[5,tri]=surpriseVector ##### cell
-        cell[6,tri] = np.concatenate((cell[0,tri], cell[1,tri]),axis=1) 
-        cell[7,tri] = np.concatenate((cell[1,tri], cell[2,tri]),axis=1)
-        cell[8,tri] = np.concatenate((cell[0,tri],cell[1,tri],
-                                      cell[3,tri],cell[4,tri],cell[5,tri]),axis=1)
-    save_path=os.path.join(root_save,fr'{Cname}','vall_CondStim.mat')
+        cell[5,tri]=dissimilarityVector ##### cell
+        cell[6,tri]=surpriseVector ##### cell
+        cell[7,tri] = np.concatenate((cell[0,tri], cell[1,tri]),axis=1) 
+        cell[8,tri] = np.concatenate((cell[1,tri], cell[2,tri]),axis=1)
+        cell[9,tri] = np.concatenate((cell[0,tri],cell[1,tri],
+                                      cell[3,tri],cell[4,tri],cell[5,tri],cell[6,tri]),axis=1)
+    save_path=os.path.join(root_save,fr'{Cname}','datsStimall.mat')
     print(fr'******************* Saving {Cname} *************')
     trialidx=list(np.arange(1,11))*1
     trialidx=np.array(trialidx,dtype=object).reshape(1,-1)
@@ -860,9 +863,9 @@ for C,Cname in enumerate(cond):
     condIndx=Cname
     condIndx=np.array(condIndx,dtype=object)
     dict_data_stim = {'names':np.array(['Env',"Env'",'AB_Env',
-                                        'phonemeonset','wordonset','GPTSurprise',
+                                        'phonemeonset','wordonset','Dissimilarity','GPTSurprise',
                                         "Env + Env'","Env'+AB_Env",
-                                        "Env+phonemonset+wordonset+GPTSurprise"],
+                                        "Env+Env'+phonemonset+wordonset+Dissimilarity+GPTSurprise"],
                                            dtype=object),
                           'trialIdxs':trialidx,
                           'condIndx':condIndx,
@@ -1467,6 +1470,7 @@ for f in files:
     df = SemDiss(f,sr=128)
     
     df.to_csv(fr'{f}')
+    print(fr'saving done for {condanme}')
 #%%
 root_path_datastim=r'E:\Bonnie\Bonnie\Autism_Data\dataCND'
 root_path_surprise=r'E:\Bonnie\Bonnie\Autism_Data\Stimuli_Target'
