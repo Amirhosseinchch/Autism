@@ -1457,6 +1457,16 @@ for cond in cond_all:
         
         print(fr'saved file {f}')
         
+#%% added semantic dissimilarity to surprse csv files
+from SemanticDiss import SemDiss
+files = sorted(glob.glob('E:\Bonnie\Bonnie\Autism_Data\Stimuli_Target\Con*\*_surprise.csv'))
+for f in files:
+    condanme = Path(f).parts[-2]
+    trialname = Path(f).parts[-1][:-4]
+    
+    df = SemDiss(f,sr=128)
+    
+    df.to_csv(fr'{f}')
 #%%
 root_path_datastim=r'E:\Bonnie\Bonnie\Autism_Data\dataCND'
 root_path_surprise=r'E:\Bonnie\Bonnie\Autism_Data\Stimuli_Target'
