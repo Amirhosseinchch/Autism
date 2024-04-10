@@ -10,6 +10,7 @@ import pandas as pd
 from gensim.test.utils import get_tmpfile
 from gensim.models import KeyedVectors
 from nltk.corpus import stopwords 
+from scipy.spatial.distance import cosine
 #%%
 
 def SemDiss(path,sr,metric='Corr',functionWords=False):
@@ -71,6 +72,13 @@ def SemDiss(path,sr,metric='Corr',functionWords=False):
             # print(diss,i)
             df.at[i,'SemanticDiss']=diss
             diss_all.append(diss)
+            
+        if metric=='CossDist':
+            diss = cosine(WordVector,contextVectorsMean)
+            # print(diss,i)
+            df.at[i,'SemanticDiss']=diss
+            diss_all.append(diss)
+            
     return df
         # if metric=='cossdist':
             
