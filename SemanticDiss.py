@@ -11,14 +11,15 @@ from gensim.test.utils import get_tmpfile
 from gensim.models import KeyedVectors
 from nltk.corpus import stopwords 
 from scipy.spatial.distance import cosine
+tmp_file = get_tmpfile(r"E:\mb_variation\mb_variation\W2VModel\vectors.bin")
+Semanticmodel =  KeyedVectors.load_word2vec_format(tmp_file,binary=True,limit=299887)
 #%%
 
 def SemDiss(path,sr,metric='Corr',functionWords=False):
     stop = set(stopwords.words('english'))
     if functionWords==True: ##### if we also want to calculate sementic diss for function words
         stop={}
-    tmp_file = get_tmpfile(r"E:\mb_variation\mb_variation\W2VModel\vectors.bin")
-    Semanticmodel =  KeyedVectors.load_word2vec_format(tmp_file,binary=True,limit=299887)
+
     diss_all=[]
     df = pd.read_csv(path)
     
