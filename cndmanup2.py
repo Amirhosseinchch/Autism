@@ -855,7 +855,7 @@ for C,Cname in enumerate(cond):
         cell[8,tri] = np.concatenate((cell[1,tri], cell[2,tri]),axis=1)
         cell[9,tri] = np.concatenate((cell[0,tri],cell[1,tri],
                                       cell[3,tri],cell[4,tri],cell[5,tri],cell[6,tri]),axis=1)
-    save_path=os.path.join(root_save,fr'{Cname}','datsStimall.mat')
+    save_path=os.path.join(root_save,fr'{Cname}','dataStimall_v1.mat')
     print(fr'******************* Saving {Cname} *************')
     trialidx=list(np.arange(1,11))*1
     trialidx=np.array(trialidx,dtype=object).reshape(1,-1)
@@ -1212,17 +1212,16 @@ sub2 = sorted(glob.glob(r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Cond1/Group2/pre_
 subidgroup1 = [Path(sub1[i]).parts[7][-7:-4] for i in range(len(sub1))]
 subidgroup2=[Path(sub2[i]).parts[7][-7:-4] for i in range(len(sub2))]
 
-root_path = r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Comb*'
-resutlts_g1 = sorted(glob.glob(root_path+r'/Group1/results/v6_8_*.mat'))
-resutlts_g2 = sorted(glob.glob(root_path+r'/Group2/results/v6_8_*.mat'))
+root_path = r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Con*'
+resutlts_g1 = sorted(glob.glob(root_path+r'/Group1/results/vall_10_*.mat'))
+resutlts_g2 = sorted(glob.glob(root_path+r'/Group2/results/vall_10_*.mat'))
 
 rall1=np.zeros((len(resutlts_g1),32))
 rall2=np.zeros((len(resutlts_g2),32))
 
 
 
-stimdict={'1':'Env','2':"Env'",'3':'AB Env','4':'pho',
-         '5':'wo','6':"Env+Env'",'7':"Env'+AB Env",'8':"Env+Env'+pho+wo"}
+
 dfall_corr_g1=pd.DataFrame([])
 dfall_corr_g2=pd.DataFrame([])
 plot=input('DO YOU WANT PLOT TRF WEIGHTS (1:Y, 0:NO): ')
@@ -1231,7 +1230,7 @@ for i,f1 in enumerate(resutlts_g1):
     f2 = resutlts_g2[i]
     
     condname = Path(f1).parts[-4]
-    stimindex = Path(f1).parts[-1][3]
+    stimindex = Path(f1).parts[-1][5:7]
     
     # featurename = stimdict[stimindex]
     
@@ -1275,68 +1274,176 @@ for i,f1 in enumerate(resutlts_g1):
     # # df.to_csv(fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\Group2_{condname}.csv',index=False)
     rall2[i,:] = np.mean(results2.get_predcorr(elec='all'),axis=0)
 #%%
+#%%
+################################# reading results for comparing shuffle using mTRFresults method
+###################################################################################
+import mTRFresults as mr
+
+channel_location = r'E:\Bonnie\Bonnie\Autism_Data\dataCND\chanlocs32Biosemi.mat'
+channel_location = scipy.io.loadmat(channel_location, simplify_cells=True)
+chanlocs = channel_location['chanlocs']
+labels = [chanlocs[i]['labels'] for i in range(len(chanlocs))]
+
+sub1 = sorted(glob.glob(r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Cond1/Group1/pre_pre*'))
+sub2 = sorted(glob.glob(r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Cond1/Group2/pre_pre*'))
+
+subidgroup1 = [Path(sub1[i]).parts[7][-7:-4] for i in range(len(sub1))]
+subidgroup2=[Path(sub2[i]).parts[7][-7:-4] for i in range(len(sub2))]
+
+root_path = r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Con*'
+resutlts_g1 = sorted(glob.glob(root_path+r'/Group1/results/vall_10_*.mat'))
+results_shuffle_g1 = sorted(glob.glob(root_path+r'/Group1/results/vshuffle_*_*.mat'))
+
+
+resutlts_g2 = sorted(glob.glob(root_path+r'/Group2/results/vall_10_*.mat'))
+results_shuffle_g2 = sorted(glob.glob(root_path+r'/Group2/results/vshuffle_*_*.mat'))
+
+rall1=np.zeros((len(resutlts_g1),32))
+rall2=np.zeros((len(resutlts_g2),32))
+
+
+
+
+dfall_corr_g1=pd.DataFrame([])
+dfall_corr_g2=pd.DataFrame([])
+plot=input('DO YOU WANT PLOT TRF WEIGHTS (1:Y, 0:NO): ')
+for i,f1 in enumerate(resutlts_g1):
+    
+    f1_shuffles = sorted(glob.glob(fr'{os.path.dirname(f1)}/vshuffle_*_*.mat')) 
+
+    f2 = resutlts_g2[i]
+    f2_shuffles = sorted(glob.glob(fr'{os.path.dirname(f2)}/vshuffle_*_*.mat'))
+    
+    condname = Path(f1).parts[-4]
+    stimindex = Path(f1).parts[-1][5:7]
+    
+    # featurename = stimdict[stimindex]
+    
+    save_path = (fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5'
+                 fr'/{condname}')
+    
+    results1 = mr.mTRFresults(f1)
+    featurename = results1.regressor_names
+    df_corr_g1 = pd.DataFrame([])
+    df_corr_g1['subid'] = subidgroup1
+    df_corr_g1['Group'] = ['Group1']*len(subidgroup1)
+    df_corr_g1['Condition'] = [condname]*len(subidgroup1)
+    df_corr_g1['regressors'] = [featurename]*len(subidgroup1)
+    df_corr_g1['Correlation']=results1.get_predcorr(elec='avg')
+    dfall_corr_g1=pd.concat((dfall_corr_g1,df_corr_g1))
+    # df=pd.DataFrame([])
+    # df['Subid']=subidgroup1
+    # rallSub1 = pd.DataFrame(results1.get_predcorr(elec='all'))
+    
+    # df=pd.concat((df,rallSub1),axis=1)
+    # df=df.rename(columns=a)
+    # df.to_csv(fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\Group1_{condname}.csv',index=False)
+    
+    rall1[i,:] = np.mean(results1.get_predcorr(elec='all'),axis=0)
+    
+    
+    results2 = mr.mTRFresults(f2)
+    df_corr_g2 = pd.DataFrame([])
+    df_corr_g2['subid'] = subidgroup2
+    df_corr_g2['Group'] = ['Group2']*len(subidgroup2)
+    df_corr_g2['Condition'] = [condname]*len(subidgroup2)
+    df_corr_g2['regressors'] = [featurename]*len(subidgroup2)
+    df_corr_g2['Correlation']=results2.get_predcorr(elec='avg')
+    dfall_corr_g2=pd.concat((dfall_corr_g2,df_corr_g2))
+    
+    # df=pd.DataFrame([])
+    # df['Subid']=subidgroup2
+    # rallSub2= pd.DataFrame(results2.get_predcorr(elec='all'))
+    # df=pd.concat((df,rallSub2),axis=1)
+    # df=df.rename(columns=a)
+    # # df.to_csv(fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\Group2_{condname}.csv',index=False)
+    rall2[i,:] = np.mean(results2.get_predcorr(elec='all'),axis=0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#%%
 #############################
 ############################# BUTTERFLY PLOTS WEIGHTS
 #%%
 
 import mTRFresults as mr
 root_path=r'E:\Bonnie\Bonnie\Autism_Data\dataCND'
-results1 = sorted(glob.glob(root_path+fr'/Co*/Group1/results/vall_*_mTrfResultsgroup1.mat'))
-results2 = sorted(glob.glob(root_path+fr'/Co*/Group2/results/vall_*_mTrfResultsgroup2.mat'))
+results1 = sorted(glob.glob(root_path+fr'/Co*/Group1/results/vall_10_mTrfResultsgroup1.mat'))
+results2 = sorted(glob.glob(root_path+fr'/Co*/Group2/results/vall_10_mTrfResultsgroup2.mat'))
 
 root_save=r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5'
-featname={0:'Env',1:"Env'",2:'Phonemeonset',3:'Wordonset'}
 for i,f1 in enumerate(results1):
     
     f2=results2[i]
     
     condname=Path(f1).parts[-4]
-    type_result = Path(f1).parts[-1][0:6]
+    type_result = Path(f1).parts[-1][0:7] #### be carful for double digit numbers
     # plot1=mr.TRFplot(f1)
     # plot2=mr.TRFplot(f2)
     
     # buttplot1=plot1.plot_weights(show_se=True) #### butterfly plts of weights
     # buttplot2=plot2.plot_weights(show_se=True)
     
-    # compareplot = mr.TRFplotcompare(f1, f2, elec=[12]) ##### comparing two plots weights for specific electrode
+    compareplot = mr.TRFplotcompare(f1, f2, elec=[12]) ##### comparing two plots weights for specific electrode
     
     
-    gfp = mr.plot_gfp(f1, f2,avg=True) ####### plotting gfp for both groups
+    # gfp = mr.plot_gfp(f1, f2,avg=True) ####### plotting gfp for both groups
     
     
     
-    for k,axe1 in enumerate(gfp):
+    for k,axe1 in enumerate(compareplot):
         # axe2=buttplot2[k]
-        # axcompare = compareplot[k]
-        axgfp = axe1
+        axcompare = compareplot[k]
+        # axgfp = axe1
         
+        #### butterfly plots parameters
         # save_path1=root_save+fr'/{condname}\{type_result}\Group1'
         # os.makedirs(save_path1,exist_ok=True)
         # save_path2=root_save+fr'/{condname}\{type_result}\Group2'
         # os.makedirs(save_path2,exist_ok=True)
         
-        # save_pathcompare = root_save+fr'/{condname}\{type_result}\indelectrode'
-        # os.makedirs(save_pathcompare,exist_ok=True)
+        save_pathcompare = root_save+fr'/{condname}\{type_result}\indelectrode'
+        os.makedirs(save_pathcompare,exist_ok=True)
         
-        save_pathgfp = root_save+fr'/{condname}\{type_result}\GFP'
-        os.makedirs(save_pathgfp,exist_ok=True)
+        # save_pathgfp = root_save+fr'/{condname}\{type_result}\GFP'
+        # os.makedirs(save_pathgfp,exist_ok=True)
         
-        
+        #### butterfly plots parameters
         # axe1=axe1.set_title(fr'{k}')
         # axe2=axe2.set_title(fr'{k}')
-        # axcompare = axcompare.set_title(fr'{k}_Pz')
-        axgfp = axgfp.set_title(fr'{k} GFP')
-
+        
+        axcompare = axcompare.set_title(fr'{k}_Pz')
+        
+        # axgfp = axgfp.set_title(fr'{k} GFP')
+        
+        
+        
+        #### butterfly plots parameters
         # fig1=axe1.get_figure()
         # fig2=axe2.get_figure()
         
-        # fig3=axcompare.get_figure()
-        fig4 = axgfp.get_figure()
-            
+        fig3=axcompare.get_figure()
+        # fig4 = axgfp.get_figure()
+        
+        #### butterfly plots parameters
         # fig1.savefig(save_path1+fr'/{k}_ridge.png',bbox_inches='tight')
         # fig2.savefig(save_path2+fr'/{k}_ridge.png',bbox_inches='tight')
         
-        fig4.savefig(save_pathgfp+fr'/{k}_GFPmean.png',bbox_inches='tight')
+        fig3.savefig(save_pathcompare+fr'/{k}.png',bbox_inches='tight')
 
 #%%
 r1 = mr.mTRFresults(f1)
@@ -1372,15 +1479,15 @@ def show_figure(fig,num):
     fig.set_canvas(new_manager.canvas)
 #%%
 df_all1=pd.concat((dfall_corr_g1,dfall_corr_g2))
-df_all2=pd.concat((dfall_corr_g1,dfall_corr_g2))
-df_compare = pd.concat((df_all1,df_all2))
-df_all=df_all.reset_index(drop=True)
-df_soi = df_all.groupby('Condition')
+# df_all2=pd.concat((dfall_corr_g1,dfall_corr_g2))
+# df_compare = pd.concat((df_all1,df_all2))
+df_all1=df_all1.reset_index(drop=True)
+df_soi = df_all1.groupby('Condition')
 df_soi=df_soi.get_group('Cond3')
 df_soigroup1=df_soi[(df_soi['Group']=='Group1')]
 df_soigroup2=df_soi[(df_soi['Group']=='Group2')]
 ttest_ind(df_soigroup1['Correlation'],df_soigroup2['Correlation'])
-sn.barplot(x='regressors', y='Correlation', data=df_compare,width=.5,errorbar='se')
+sn.barplot(x='regressors',hue='Group', y='Correlation', data=df_all1,width=.5,errorbar='se')
 plt.legend(loc='upper right')
 plt.xticks(fontsize=15)
 plt.xlabel('Condition',fontsize=30)
@@ -1390,7 +1497,7 @@ plt.locator_params(axis='y', nbins=4)
 plt.tight_layout()
 plt.xlabel(fontsize=25)
 plt.ylabel(fontsize=25)
-a=pg.mixed_anova(data=df_all,within='Condition',between='Group',
+a=pg.mixed_anova(data=df_all1,within='Condition',between='Group',
                subject='subid',dv='Correlation')
 #%%
 ############### reading text grid files
