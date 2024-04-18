@@ -992,20 +992,22 @@ for i in range(len(rall1)):
     mngr.window.setGeometry(posX, posY, sizeX, sizeY)
     ###################################################
     
-    figs,axs=plt.subplots(1,2,sharex=False,sharey=False,figsize=(30,15))
+    figs1,axs=plt.subplots(1,1,sharex=False,sharey=False,figsize=(30,15))
     # data = np.mean(r_all_sub_group1,axis=0)
     im,cm=plot_topomap(r1,pos=info,ch_type='eeg',
                   cmap='hot_r',show=False,sphere=.095,vlim=(0,.1),
-                  size=50,res=64,axes=axs[0],names=labels)
-    figs.colorbar(im,location='bottom',aspect=3,shrink=.3)
+                  size=50,res=64,axes=axs,names=labels)
+    figs1.colorbar(im,location='bottom',aspect=3,shrink=.3)
     # data = np.mean(r_all_sub_group2,axis=0)
+    figs2,axs=plt.subplots(1,1,sharex=False,sharey=False,figsize=(30,15))
     im,cm=plot_topomap(r2,pos=info,ch_type='eeg',
                   cmap='hot_r',show=False,sphere=.095,vlim=(0,.1),
-                  size=50,res=64,axes=axs[1],names=labels)
-    axs[0].set_title('Group1')
-    axs[1].set_title('Group2') 
-    figs.colorbar(im,location='bottom',aspect=3,shrink=.3)
-    figs.savefig((fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\corr{i}_ridge_withsurprise.png'))
+                  size=50,res=64,axes=axs,names=labels)
+    # axs[0].set_title('Group1')
+    # axs[1].set_title('Group2') 
+    figs2.colorbar(im,location='bottom',aspect=3,shrink=.3)
+    figs1.savefig((fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\corr{i}_ridge_group1.png'))
+    figs2.savefig((fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\corr{i}_ridge_group2.png'))
     plt.close('all')
     plt.rcParams.update(plt.rcParamsDefault)
 #%%
@@ -1292,11 +1294,9 @@ subidgroup2=[Path(sub2[i]).parts[7][-7:-4] for i in range(len(sub2))]
 
 root_path = r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Con*'
 resutlts_g1 = sorted(glob.glob(root_path+r'/Group1/results/vall_10_*.mat'))
-results_shuffle_g1 = sorted(glob.glob(root_path+r'/Group1/results/vshuffle_*_*.mat'))
-
 
 resutlts_g2 = sorted(glob.glob(root_path+r'/Group2/results/vall_10_*.mat'))
-results_shuffle_g2 = sorted(glob.glob(root_path+r'/Group2/results/vshuffle_*_*.mat'))
+
 
 rall1=np.zeros((len(resutlts_g1),32))
 rall2=np.zeros((len(resutlts_g2),32))
@@ -1304,68 +1304,89 @@ rall2=np.zeros((len(resutlts_g2),32))
 
 
 
-dfall_corr_g1=pd.DataFrame([])
-dfall_corr_g2=pd.DataFrame([])
+dfall_delta_corr_g1=pd.DataFrame([])
+dfall_delta_corr_g2=pd.DataFrame([])
 plot=input('DO YOU WANT PLOT TRF WEIGHTS (1:Y, 0:NO): ')
-for i,f1 in enumerate(resutlts_g1):
-    
-    f1_shuffles = sorted(glob.glob(fr'{os.path.dirname(f1)}/vshuffle_*_*.mat')) 
 
-    f2 = resutlts_g2[i]
-    f2_shuffles = sorted(glob.glob(fr'{os.path.dirname(f2)}/vshuffle_*_*.mat'))
+regname = ["Env","ENV'","Pho","Wo","Diss","Lexical Surprise"]
+
+for i,f1 in enumerate(resutlts_g1):
     
     condname = Path(f1).parts[-4]
     stimindex = Path(f1).parts[-1][5:7]
     
-    # featurename = stimdict[stimindex]
-    
-    save_path = (fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5'
-                 fr'/{condname}')
+    results_shuffle_g1 = sorted(glob.glob(fr'{os.path.dirname(f1)}/vshuffle_*_*.mat')) 
+
+    f2 = resutlts_g2[i]
+    results_shuffle_g2 = sorted(glob.glob(fr'{os.path.dirname(f2)}/vshuffle_*_*.mat'))
     
     results1 = mr.mTRFresults(f1)
-    featurename = results1.regressor_names
-    df_corr_g1 = pd.DataFrame([])
-    df_corr_g1['subid'] = subidgroup1
-    df_corr_g1['Group'] = ['Group1']*len(subidgroup1)
-    df_corr_g1['Condition'] = [condname]*len(subidgroup1)
-    df_corr_g1['regressors'] = [featurename]*len(subidgroup1)
-    df_corr_g1['Correlation']=results1.get_predcorr(elec='avg')
-    dfall_corr_g1=pd.concat((dfall_corr_g1,df_corr_g1))
-    # df=pd.DataFrame([])
-    # df['Subid']=subidgroup1
-    # rallSub1 = pd.DataFrame(results1.get_predcorr(elec='all'))
-    
-    # df=pd.concat((df,rallSub1),axis=1)
-    # df=df.rename(columns=a)
-    # df.to_csv(fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\Group1_{condname}.csv',index=False)
-    
-    rall1[i,:] = np.mean(results1.get_predcorr(elec='all'),axis=0)
-    
+    r1 = results1.get_predcorr(elec='avg')
     
     results2 = mr.mTRFresults(f2)
-    df_corr_g2 = pd.DataFrame([])
-    df_corr_g2['subid'] = subidgroup2
-    df_corr_g2['Group'] = ['Group2']*len(subidgroup2)
-    df_corr_g2['Condition'] = [condname]*len(subidgroup2)
-    df_corr_g2['regressors'] = [featurename]*len(subidgroup2)
-    df_corr_g2['Correlation']=results2.get_predcorr(elec='avg')
-    dfall_corr_g2=pd.concat((dfall_corr_g2,df_corr_g2))
+    r2 = results2.get_predcorr(elec='avg')
     
-    # df=pd.DataFrame([])
-    # df['Subid']=subidgroup2
-    # rallSub2= pd.DataFrame(results2.get_predcorr(elec='all'))
-    # df=pd.concat((df,rallSub2),axis=1)
-    # df=df.rename(columns=a)
-    # # df.to_csv(fr'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5\Group2_{condname}.csv',index=False)
-    rall2[i,:] = np.mean(results2.get_predcorr(elec='all'),axis=0)
+    for ii,f1_shuffle in enumerate(results_shuffle_g1):
+        
+        shuffled_regressor = regname[ii]    
+    
+        f2_shuffle = results_shuffle_g2[ii]
+        
+        results_shuffle1 = mr.mTRFresults(f1_shuffle)
+        r_shuffle1 = results_shuffle1.get_predcorr(elec='avg')
+        
+        results_shuffle2 = mr.mTRFresults(f2_shuffle)
+        r_shuffle2 = results_shuffle2.get_predcorr(elec='avg')
+        
+        delta_r1 = r1 - r_shuffle1
+        delta_r2 = r2 - r_shuffle2
+        
+        ####### Group1 
+        featurename = results1.regressor_names
+        df_delta_corr_g1 = pd.DataFrame([])
+        df_delta_corr_g1['subid'] = subidgroup1
+        df_delta_corr_g1['Group'] = ['Group1']*len(subidgroup1)
+        df_delta_corr_g1['Condition'] = [condname]*len(subidgroup1)
+        df_delta_corr_g1['regressors'] = [featurename]*len(subidgroup1)
+        df_delta_corr_g1['Shuffled regressor'] = [shuffled_regressor]*len(subidgroup1)
+        df_delta_corr_g1['Correlation Gain']=delta_r1
+        dfall_delta_corr_g1=pd.concat((dfall_delta_corr_g1,df_delta_corr_g1))
+        
+        ####### Group2
+        featurename = results2.regressor_names
+        df_delta_corr_g2 = pd.DataFrame([])
+        df_delta_corr_g2['subid'] = subidgroup2
+        df_delta_corr_g2['Group'] = ['Group2']*len(subidgroup2)
+        df_delta_corr_g2['Condition'] = [condname]*len(subidgroup2)
+        df_delta_corr_g2['regressors'] = [featurename]*len(subidgroup2)
+        df_delta_corr_g2['Shuffled regressor'] = [shuffled_regressor]*len(subidgroup2)
+        df_delta_corr_g2['Correlation Gain']=delta_r2
+        dfall_delta_corr_g2=pd.concat((dfall_delta_corr_g2,df_delta_corr_g2))
+        
+#%%
+
+df_all_delta = pd.concat([dfall_delta_corr_g1,dfall_delta_corr_g2])
+    
+df_all_delta = df_all_delta.groupby('Condition')
+for c in ['Cond1','Cond2','Cond3','Cond4']:
+    
+    df_all_delta_condition = df_all_delta.get_group(fr'{c}')
+
+# df_soi = df_all_delta_condition.groupby(['Group','Shuffled regressor'])
 
 
 
+    plt.figure()
+    sn.barplot(data=df_all_delta_condition,x='Shuffled regressor',hue='Group',y='Correlation Gain',
+           width=.5,errorbar='se')
+    plt.title(fr'{c}')
+
+a=pg.mixed_anova(data=df_all_delta,within=['Condition','Shuffled regressor'],between='Group',
+               subject='subid',dv='Correlation')
 
 
-
-
-
+df_soi = df_all1.groupby('Condition')
+df_soi=df_soi.get_group('Cond3')
 
 
 
@@ -1386,6 +1407,8 @@ results1 = sorted(glob.glob(root_path+fr'/Co*/Group1/results/vall_10_mTrfResults
 results2 = sorted(glob.glob(root_path+fr'/Co*/Group2/results/vall_10_mTrfResultsgroup2.mat'))
 
 root_save=r'E:\Bonnie\Bonnie\Autism_Data\dataCND\Results\multivariate\v5'
+elecname={12:'Pz',30:'Fz',31:'Cz'}
+e=31
 for i,f1 in enumerate(results1):
     
     f2=results2[i]
@@ -1395,15 +1418,17 @@ for i,f1 in enumerate(results1):
     # plot1=mr.TRFplot(f1)
     # plot2=mr.TRFplot(f2)
     
-    # buttplot1=plot1.plot_weights(show_se=True) #### butterfly plts of weights
-    # buttplot2=plot2.plot_weights(show_se=True)
+    # buttplot1=plot1.plot_weights(show_se=False) #### butterfly plts of weights
+    # buttplot2=plot2.plot_weights(show_se=False)
     
-    compareplot = mr.TRFplotcompare(f1, f2, elec=[12]) ##### comparing two plots weights for specific electrode
+    
+        
+    compareplot = mr.TRFplotcompare(f1, f2, elec=[e]) ##### comparing two plots weights for specific electrode
     
     
     # gfp = mr.plot_gfp(f1, f2,avg=True) ####### plotting gfp for both groups
     
-    
+
     
     for k,axe1 in enumerate(compareplot):
         # axe2=buttplot2[k]
@@ -1426,7 +1451,7 @@ for i,f1 in enumerate(results1):
         # axe1=axe1.set_title(fr'{k}')
         # axe2=axe2.set_title(fr'{k}')
         
-        axcompare = axcompare.set_title(fr'{k}_Pz')
+        axcompare = axcompare.set_title(fr'{k}_{elecname[e]}')
         
         # axgfp = axgfp.set_title(fr'{k} GFP')
         
@@ -1436,14 +1461,17 @@ for i,f1 in enumerate(results1):
         # fig1=axe1.get_figure()
         # fig2=axe2.get_figure()
         
-        fig3=axcompare.get_figure()
-        # fig4 = axgfp.get_figure()
+        fig3=axcompare.get_figure() ### eletrode compare trf
+        
+        # fig4 = axgfp.get_figure() ### GFp compare TRF
         
         #### butterfly plots parameters
         # fig1.savefig(save_path1+fr'/{k}_ridge.png',bbox_inches='tight')
         # fig2.savefig(save_path2+fr'/{k}_ridge.png',bbox_inches='tight')
         
-        fig3.savefig(save_pathcompare+fr'/{k}.png',bbox_inches='tight')
+        fig3.savefig(save_pathcompare+fr'/{k}_{elecname[e]}.png',bbox_inches='tight')
+        
+        # fig4.savefig(save_pathgfp+fr'/{k}.png',bbox_inches='tight')
 
 #%%
 r1 = mr.mTRFresults(f1)
@@ -1487,7 +1515,8 @@ df_soi=df_soi.get_group('Cond3')
 df_soigroup1=df_soi[(df_soi['Group']=='Group1')]
 df_soigroup2=df_soi[(df_soi['Group']=='Group2')]
 ttest_ind(df_soigroup1['Correlation'],df_soigroup2['Correlation'])
-sn.barplot(x='regressors',hue='Group', y='Correlation', data=df_all1,width=.5,errorbar='se')
+plt.figure()
+sn.barplot(x='Condition',hue='Group', y='Correlation', data=df_all1,width=.5,errorbar='se')
 plt.legend(loc='upper right')
 plt.xticks(fontsize=15)
 plt.xlabel('Condition',fontsize=30)
